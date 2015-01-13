@@ -2,7 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-
+var session = require('express-session');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -22,16 +22,24 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+app.use(session({secret: 'Ryan and Zach are awesome'}));
 
 app.get('/',
 function(req, res) {
-  console.log(req);
-  res.render('index');
+  if (util.checkUser(req)) {
+    res.render('index');
+  } else {
+    res.redirect('login');
+  }
 });
 
 app.get('/create',
 function(req, res) {
-  res.render('index');
+  if (util.checkUser(req)) {
+    res.render('index');
+  } else {
+    res.redirect('login');
+  }
 });
 
 app.get('/links',
@@ -97,7 +105,10 @@ function(req, res) {
   new User({ username: username, password: password }).fetch().then(function(found) {
     if (found) {
       console.log("i found you", username);
-      res.redirect('index');
+      req.session.regenerate(function(){
+        req.session.user = username;
+        res.redirect('index');
+      });
       // res.send(200, found.attributes);
     } else {
       // send message invalid username/password
