@@ -3,6 +3,7 @@ var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var session = require('express-session');
+var bcrypt = require('bcrypt-nodejs');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -101,14 +102,34 @@ app.post('/login',
 function(req, res) {
   var username = req.body.username;
   var password = req.body.password;
+  console.log('login attempt');
 
-  new User({ username: username, password: password }).fetch().then(function(found) {
+  new User({ username: username}).fetch().then(function(found) {
+    // console.log('found is ', found);
     if (found) {
-      console.log("i found you", username);
-      req.session.regenerate(function(){
-        req.session.user = username;
-        res.redirect('index');
+      var salt = found.attributes.salt;
+      var dbPassword = found.attributes.password;
+      console.log('salt ', salt);
+      console.log('pw ', dbPassword);
+
+      bcrypt.hash(password, salt, null, function(err, result){
+        console.log(result);
+        if(err){
+          console.log('found error: ', err);
+        } else {
+          console.log('new pw: ', result);
+          if(result === dbPassword){
+            console.log("i found you", username);
+            req.session.regenerate(function(){
+              req.session.user = username;
+              res.redirect('index');
+            });
+          } else {
+            res.render('login');
+          }
+        }
       });
+      //User.checkLogin(username, password);
       // res.send(200, found.attributes);
     } else {
       // send message invalid username/password
@@ -116,6 +137,8 @@ function(req, res) {
     }
   });
 });
+
+
 
 app.post('/signup',
 function(req, res) {

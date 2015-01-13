@@ -7,12 +7,13 @@ var User = db.Model.extend({
   hasTimestamps: true,
   initialize : function(){
     this.on('add', function(model, attrs, options){
-
+      console.log('initializing');
       var salt = bcrypt.genSalt(10, function(err, res){
         model.set('salt', res).save();
-      });
-      var hash = bcrypt.hash(model.get('password'), salt, model.progress, function(err, res){
-        model.set('password', res).save();
+        //console.log(salt);
+        var hash = bcrypt.hash(model.get('password'), model.get('salt'), model.progress, function(err, res){
+          model.set('password', res).save();
+        });
       });
 
     });
@@ -22,6 +23,7 @@ var User = db.Model.extend({
   progress: function(){
     // console.log("this is still working on it");
   }
+
 });
 
 module.exports = User;
