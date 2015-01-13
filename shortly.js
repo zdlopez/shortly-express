@@ -144,6 +144,14 @@ function(req, res) {
   });
 });
 
+app.get('/logout',
+function(req, res) {
+  console.log('logging out');
+  req.session.destroy(function() {
+    console.log('destroy\'n')
+    res.render('login');
+  });
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
