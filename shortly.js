@@ -25,6 +25,7 @@ app.use(express.static(__dirname + '/public'));
 
 app.get('/',
 function(req, res) {
+  console.log(req);
   res.render('index');
 });
 
@@ -92,6 +93,17 @@ app.post('/login',
 function(req, res) {
   var username = req.body.username;
   var password = req.body.password;
+
+  new User({ username: username, password: password }).fetch().then(function(found) {
+    if (found) {
+      console.log("i found you", username);
+      res.redirect('index');
+      // res.send(200, found.attributes);
+    } else {
+      // send message invalid username/password
+      res.render('login');
+    }
+  });
 });
 
 app.post('/signup',
@@ -99,46 +111,28 @@ function(req, res) {
 
   var username = req.body.username;
   var password = req.body.password;
-  console.log(username);
 
   new User({ username: username, password: password }).fetch().then(function(found) {
     if (found) {
+      // send message user account already exists
       console.log("i found you", username);
-      res.send(200, found.attributes);
+      res.redirect('login');
+      // res.send(200, found.attributes);
     } else {
-      var myuser = new User({
+      new User({
         username: username,
         password: password
       }).save().then(function(newUser) {
-        console.log('new user is ', newUser);
         Users.add(newUser);
-        res.send(200, newUser);
+        //res.send(200, newUser);
+        res.redirect('index');
+      }).catch(function(err, success){
+        console.log("error in post is ", err);
       });
     }
   });
 });
 
-
-
-
-
-//   var username = req.body.username;
-//   var password = req.body.password;
-
-// var user = new User({username: username, password: password, salt: 'salty'});//.fetch().then(function(found){
-//     // var user = new User({
-//     //   username: username,
-//     //   password: password
-//     // });
-//     user.save().then(function(newUser) {
-//       console.log("newUser in post ", newUser);
-//       Users.add(newUser);
-//       res.send(200, newUser);
-//     }).catch(function(err, success){
-//       console.log("error in post is ", err);
-//     });
-//   // });
-//   //console.log(user);
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
