@@ -102,22 +102,16 @@ app.post('/login',
 function(req, res) {
   var username = req.body.username;
   var password = req.body.password;
-  console.log('login attempt');
 
   new User({ username: username}).fetch().then(function(found) {
-    // console.log('found is ', found);
     if (found) {
       var salt = found.attributes.salt;
       var dbPassword = found.attributes.password;
-      console.log('salt ', salt);
-      console.log('pw ', dbPassword);
 
       bcrypt.hash(password, salt, null, function(err, result){
-        console.log(result);
         if(err){
           console.log('found error: ', err);
         } else {
-          console.log('new pw: ', result);
           if(result === dbPassword){
             console.log("i found you", username);
             req.session.regenerate(function(){
@@ -129,8 +123,6 @@ function(req, res) {
           }
         }
       });
-      //User.checkLogin(username, password);
-      // res.send(200, found.attributes);
     } else {
       // send message invalid username/password
       res.render('login');
@@ -146,7 +138,7 @@ function(req, res) {
   var username = req.body.username;
   var password = req.body.password;
 
-  new User({ username: username, password: password }).fetch().then(function(found) {
+  new User({ username: username}).fetch().then(function(found) {
     if (found) {
       // send message user account already exists
       console.log("i found you", username);
@@ -169,10 +161,9 @@ function(req, res) {
 
 app.get('/logout',
 function(req, res) {
-  console.log('logging out');
   req.session.destroy(function() {
     console.log('destroy\'n')
-    res.render('login');
+    res.redirect('/login');
   });
 });
 
