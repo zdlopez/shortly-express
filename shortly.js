@@ -12,7 +12,42 @@ var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
+var passport = require('passport');
+var OAuthStrategy = require('passport-oauth').OAuthStrategy;
+var GitHubStrategy = require('passport-github').Strategy;
+
+var GITHUB_CLIENT_ID = '6dddcc8d1ef754f86877';
+var GITHUB_CLIENT_SECRET = 'c962cfcb72de6d9e3df1a2fc6db26465b79ba712';
+
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+
+passport.deserializeUser(function(obj, done) {
+  done(null, obj);
+});
+
+passport.use(new GitHubStrategy({
+    clientID: GITHUB_CLIENT_ID,
+    clientSecret: GITHUB_CLIENT_SECRET,
+    callbackURL: "http://localhost:4568/"
+  },
+  function(accessToken, refreshToken, profile, done) {
+    // asynchronous verification, for effect...
+    process.nextTick(function () {
+
+      // To keep the example simple, the user's GitHub profile is returned to
+      // represent the logged-in user.  In a typical application, you would want
+      // to associate the GitHub account with a user record in your database,
+      // and return that user instead.
+      return done(null, profile);
+    });
+  }
+));
+
 var app = express();
+
+
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -24,34 +59,49 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 app.use(session({secret: 'Ryan and Zach are awesome'}));
+app.use(passport.initialize());
+app.use(passport.session());
 
-app.get('/',
-function(req, res) {
-  if (util.checkUser(req)) {
-    res.render('index');
-  } else {
-    res.redirect('login');
-  }
+app.get('/',ensureAuthenticated, function(req, res){
+  res.render('index', { user: req.user });
+
+// function(req, res) {
+//   if (util.checkUser(req)) {
+//     res.render('index');
+//   } else {
+//     res.redirect('login');
+//   }
 });
 
-app.get('/create',
-function(req, res) {
-  if (util.checkUser(req)) {
-    res.render('index');
-  } else {
-    res.redirect('login');
-  }
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) { return next(); }
+  res.redirect('/login')
+}
+
+app.get('/create',ensureAuthenticated, function(req, res){
+  res.render('index', { user: req.user });
+// function(req, res) {
+//   if (util.checkUser(req)) {
+//     res.render('index');
+//   } else {
+//     res.redirect('login');
+//   }
 });
 
-app.get('/links',
-function(req, res) {
-  if (util.checkUser(req)) {
-    Links.reset().fetch().then(function(links) {
-      res.send(200, links.models);
-    });
-  } else {
-    res.redirect('login');
-  }
+app.get('/links',ensureAuthenticated, function(req, res){
+  Links.reset().fetch().then(function(links) {
+  res.send(200, links.models);
+
+  //res.render('index', { user: req.user });
+// function(req, res) {
+//   if (util.checkUser(req)) {
+//     Links.reset().fetch().then(function(links) {
+//       res.send(200, links.models);
+//     });
+//   } else {
+//     res.redirect('login');
+//   }
+  });
 });
 
 app.post('/links',
@@ -93,8 +143,15 @@ function(req, res) {
 /************************************************************/
 
 app.get('/login',
-function(req, res) {
-  res.render('login');
+  passport.authenticate('github'),
+  function(req, res) {
+    res.render('login');
+});
+
+app.get('/auth/github/callback',
+  passport.authenticate('github', { failureRedirect: '/login' }),
+  function(req, res) {
+    res.redirect('/');
 });
 
 app.get('/signup',
@@ -102,37 +159,37 @@ function(req, res) {
   res.render('signup');
 });
 
-app.post('/login',
-function(req, res) {
-  var username = req.body.username;
-  var password = req.body.password;
+// app.post('/login',
+// function(req, res) {
+//   var username = req.body.username;
+//   var password = req.body.password;
 
-  new User({ username: username}).fetch().then(function(found) {
-    if (found) {
-      var salt = found.attributes.salt;
-      var dbPassword = found.attributes.password;
+//   new User({ username: username}).fetch().then(function(found) {
+//     if (found) {
+//       var salt = found.attributes.salt;
+//       var dbPassword = found.attributes.password;
 
-      bcrypt.hash(password, salt, null, function(err, result){
-        if(err){
-          console.log('found error: ', err);
-        } else {
-          if(result === dbPassword){
-            console.log("i found you", username);
-            req.session.regenerate(function(){
-              req.session.user = username;
-              res.redirect('/');
-            });
-          } else {
-            res.redirect('/');
-          }
-        }
-      });
-    } else {
-      // send message invalid username/password
-      res.redirect('/login');
-    }
-  });
-});
+//       bcrypt.hash(password, salt, null, function(err, result){
+//         if(err){
+//           console.log('found error: ', err);
+//         } else {
+//           if(result === dbPassword){
+//             console.log("i found you", username);
+//             req.session.regenerate(function(){
+//               req.session.user = username;
+//               res.redirect('/');
+//             });
+//           } else {
+//             res.redirect('/');
+//           }
+//         }
+//       });
+//     } else {
+//       // send message invalid username/password
+//       res.redirect('/login');
+//     }
+//   });
+// });
 
 
 
