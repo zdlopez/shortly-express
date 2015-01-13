@@ -96,20 +96,49 @@ function(req, res) {
 
 app.post('/signup',
 function(req, res) {
+
   var username = req.body.username;
   var password = req.body.password;
+  console.log(username);
 
-  var user = new User({username: username, password: password}).fetch().then(function(found){
-    user.save().then(function(newUser) {
-      console.log("newUser in post ", newUser);
-      Users.add(newUser);
-      res.send(200, newUser);
-    }).catch(function(err, success){
-      console.log("error in post is ", err);
-    });
+  new User({ username: username, password: password }).fetch().then(function(found) {
+    if (found) {
+      console.log("i found you", username);
+      res.send(200, found.attributes);
+    } else {
+      var myuser = new User({
+        username: username,
+        password: password
+      }).save().then(function(newUser) {
+        console.log('new user is ', newUser);
+        Users.add(newUser);
+        res.send(200, newUser);
+      });
+    }
   });
-  console.log(user);
 });
+
+
+
+
+
+//   var username = req.body.username;
+//   var password = req.body.password;
+
+// var user = new User({username: username, password: password, salt: 'salty'});//.fetch().then(function(found){
+//     // var user = new User({
+//     //   username: username,
+//     //   password: password
+//     // });
+//     user.save().then(function(newUser) {
+//       console.log("newUser in post ", newUser);
+//       Users.add(newUser);
+//       res.send(200, newUser);
+//     }).catch(function(err, success){
+//       console.log("error in post is ", err);
+//     });
+//   // });
+//   //console.log(user);
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
