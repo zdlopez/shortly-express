@@ -45,9 +45,13 @@ function(req, res) {
 
 app.get('/links',
 function(req, res) {
-  Links.reset().fetch().then(function(links) {
-    res.send(200, links.models);
-  });
+  if (util.checkUser(req)) {
+    Links.reset().fetch().then(function(links) {
+      res.send(200, links.models);
+    });
+  } else {
+    res.redirect('login');
+  }
 });
 
 app.post('/links',
@@ -116,16 +120,16 @@ function(req, res) {
             console.log("i found you", username);
             req.session.regenerate(function(){
               req.session.user = username;
-              res.redirect('index');
+              res.redirect('/');
             });
           } else {
-            res.render('login');
+            res.redirect('/');
           }
         }
       });
     } else {
       // send message invalid username/password
-      res.render('login');
+      res.redirect('/login');
     }
   });
 });
@@ -151,7 +155,7 @@ function(req, res) {
       }).save().then(function(newUser) {
         Users.add(newUser);
         //res.send(200, newUser);
-        res.redirect('index');
+        res.redirect('/');
       }).catch(function(err, success){
         console.log("error in post is ", err);
       });
@@ -162,7 +166,7 @@ function(req, res) {
 app.get('/logout',
 function(req, res) {
   req.session.destroy(function() {
-    console.log('destroy\'n')
+    // console.log('destroy\'n');
     res.redirect('/login');
   });
 });

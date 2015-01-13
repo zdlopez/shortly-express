@@ -7,7 +7,6 @@ var User = db.Model.extend({
   hasTimestamps: true,
   initialize : function(){
     this.on('add', function(model, attrs, options){
-      console.log('initializing');
       var salt = bcrypt.genSalt(10, function(err, res){
         model.set('salt', res).save();
         //console.log(salt);
