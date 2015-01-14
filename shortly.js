@@ -62,8 +62,9 @@ app.use(session({secret: 'Ryan and Zach are awesome'}));
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.get('/',ensureAuthenticated, function(req, res){
-  res.render('index', { user: req.user });
+// app.get('/',ensureAuthenticated, function(req, res){
+//   res.render('index', { user: req.user });
+
 
 // function(req, res) {
 //   if (util.checkUser(req)) {
@@ -71,11 +72,19 @@ app.get('/',ensureAuthenticated, function(req, res){
 //   } else {
 //     res.redirect('login');
 //   }
-});
+// });
+
+app.get('/',
+  passport.authenticate('github', { failureRedirect: '/login' }),
+  function(req, res) {
+    console.log(res);
+    res.render('index');
+  });
+
 
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) { return next(); }
-  res.redirect('/login')
+  res.redirect('/login');
 }
 
 app.get('/create',ensureAuthenticated, function(req, res){
@@ -142,17 +151,20 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
-app.get('/login',
+app.get('/auth/github',
   passport.authenticate('github'),
   function(req, res) {
-    res.render('login');
+    res.render('index');
 });
 
-app.get('/auth/github/callback',
-  passport.authenticate('github', { failureRedirect: '/login' }),
-  function(req, res) {
-    res.redirect('/');
+app.get('/login', function(req, res){
+  res.render('loginGithub');
 });
+
+app.post('/login',function(req, res){
+  res.render('/');
+});
+
 
 app.get('/signup',
 function(req, res) {
@@ -222,11 +234,13 @@ function(req, res) {
 
 app.get('/logout',
 function(req, res) {
-  req.session.destroy(function() {
-    // console.log('destroy\'n');
-    res.redirect('/login');
+    req.logout();
+    res.redirect('loginGithub');
+  // req.session.destroy(function() {
+  //   // console.log('destroy\'n');
+  //   res.redirect('/login');
+  // });
   });
-});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
