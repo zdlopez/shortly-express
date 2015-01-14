@@ -40,6 +40,16 @@ passport.use(new GitHubStrategy({
       // represent the logged-in user.  In a typical application, you would want
       // to associate the GitHub account with a user record in your database,
       // and return that user instead.
+      //console.log('user profile', profile);
+      var username = profile.username;
+
+      new User({ username: username}).fetch().then(function(found) {
+        if (found) {
+          console.log('i found you', username);
+        } else {
+          console.log('you got away this time', username);
+        }
+      });
       return done(null, profile);
     });
   }
@@ -77,7 +87,6 @@ app.use(passport.session());
 app.get('/',
   passport.authenticate('github', { failureRedirect: '/login' }),
   function(req, res) {
-    console.log(res);
     res.render('index');
   });
 
@@ -155,7 +164,7 @@ app.get('/auth/github',
   passport.authenticate('github'),
   function(req, res) {
     res.render('index');
-});
+  });
 
 app.get('/login', function(req, res){
   res.render('loginGithub');
@@ -235,12 +244,19 @@ function(req, res) {
 app.get('/logout',
 function(req, res) {
     req.logout();
-    res.redirect('loginGithub');
+    req.session = null;
+    // req.session.destroy(function(){
+    //   res.render('loginGithub');
+    //   res.end({authenticated: res.authenticated});
+
+    // });
+      res.render('loginGithub');
+
   // req.session.destroy(function() {
   //   // console.log('destroy\'n');
   //   res.redirect('/login');
   // });
-  });
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
